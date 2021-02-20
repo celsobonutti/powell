@@ -8,7 +8,7 @@ fn join_values(x: u4, y: u4, z: u4) u12 {
 pub fn main() void {
     const a: u12 = join_values(0xf, 0xf, 0xf);
 
-    const instruction = Instruction{ .JP = a };
+    const instruction = Instruction{ .GoTo = a };
 
     std.debug.print("{}\n", .{instruction});
 }

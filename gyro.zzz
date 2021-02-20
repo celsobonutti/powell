@@ -1,0 +1,11 @@
+pkgs:
+  powell:
+    version: 0.0.0
+    description: "Chip8 assembly compiler, written in Zig"
+    source_url: "https://github.com/celsobonutti/powell"
+    root: src/main.zig
+    files:
+      README.md
+      LICENSE
+deps:
+  Hejsil/mecha: ^0.0.0
