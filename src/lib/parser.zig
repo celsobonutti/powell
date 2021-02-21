@@ -69,14 +69,16 @@ pub const instructions = combine(.{ instruction, discard(ascii.char('\n')) });
 pub fn parse(input: []const u8) CompilerError![]const Instruction {
     var text = input;
     var intructionList = ArrayList(Instruction).init(std.heap.page_allocator);
+    var count: u16 = 1;
 
-    while (!std.mem.eql(u8, text, "")) {
+    while (!std.mem.eql(u8, text, "")) : (count += 1) {
         var result = instructions(text);
 
         if (result == null) {
             result = instruction(text);
 
             if (result == null) {
+                std.log.err("Parsing error in line {d}", .{count});
                 return CompilerError.ParseError;
             }
         }
