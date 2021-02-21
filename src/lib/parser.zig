@@ -62,9 +62,78 @@ pub const instruction_with_addr = map(Instruction, toInstructionWithAddr, combin
     addr,
 }));
 
-pub const instruction = oneOf(.{ instruction_with_no_argument, instruction_with_addr });
+fn toInstructionEndingWithRegister(v: anytype) Instruction {
+    if (strEq(v[0], "SKP V")) {
+        return Instruction{ .SkipIfKeyPressed = v[1] };
+    } else if (strEq(v[0], "SKNP V")) {
+        return Instruction{ .SkipIfKeyNotPressed = v[1] };
+    } else if (strEq(v[0], "LD DT, V")) {
+        return Instruction{ .SetDelayAsX = v[1] };
+    } else if (strEq(v[0], "LD ST, V")) {
+        return Instruction{ .SetSoundAsX = v[1] };
+    } else if (strEq(v[0], "ADD I, V")) {
+        return Instruction{ .AddXToI = v[1] };
+    } else if (strEq(v[0], "LD F, V")) {
+        return Instruction{ .SetIAsFontSprite = v[1] };
+    } else if (strEq(v[0], "LD B, V")) {
+        return Instruction{ .StoreBCD = v[1] };
+    } else if (strEq(v[0], "LD [I], V")) {
+        return Instruction{ .DumpRegisters = v[1] };
+    } else if (strEq(v[0], "SHR V")) {
+        return Instruction{ .ShiftRight = v[1] };
+    } else if (strEq(v[0], "SHL V")) {
+        return Instruction{ .ShiftLeft = v[1] };
+    } else {
+        unreachable;
+    }
+}
 
-pub const instructions = combine(.{ instruction, discard(ascii.char('\n')) });
+const instruction_ending_with_register = map(Instruction, toInstructionEndingWithRegister, combine(.{
+    asStr(oneOf(.{
+        string("SKP V"),
+        string("SKNP V"),
+        string("LD DT, V"),
+        string("LD ST, V"),
+        string("ADD I, V"),
+        string("LD F, V"),
+        string("LD B, V"),
+        string("LD [I], V"),
+        string("SHR V"),
+        string("SHL V"),
+    })),
+    hex,
+}));
+
+fn toInstructionStartingWithRegister(v: anytype) Instruction {
+    if (strEq(v[1], ", DT")) {
+        return Instruction{ .SetXAsDelay = v[0] };
+    } else if (strEq(v[1], ", K")) {
+        return Instruction{ .WaitForInputAndStoreIn = v[0] };
+    } else if (strEq(v[1], ", [I]")) {
+        return Instruction{ .LoadRegisters = v[0] };
+    } else {
+        unreachable;
+    }
+}
+
+const instruction_starting_with_register = map(Instruction, toInstructionStartingWithRegister, combine(.{
+    string("LD V"),
+    hex,
+    asStr(oneOf(.{
+        string(", DT"),
+        string(", K"),
+        string(", [I]"),
+    })),
+}));
+
+pub const instruction = oneOf(.{
+    instruction_with_no_argument,
+    instruction_with_addr,
+    instruction_starting_with_register,
+    instruction_ending_with_register,
+});
+
+pub const instructionWithLineBreak = combine(.{ instruction, discard(ascii.char('\n')) });
 
 pub fn parse(input: []const u8) CompilerError![]const Instruction {
     var text = input;
@@ -72,7 +141,7 @@ pub fn parse(input: []const u8) CompilerError![]const Instruction {
     var count: u16 = 1;
 
     while (!std.mem.eql(u8, text, "")) : (count += 1) {
-        var result = instructions(text);
+        var result = instructionWithLineBreak(text);
 
         if (result == null) {
             result = instruction(text);
