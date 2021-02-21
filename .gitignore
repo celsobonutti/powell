@@ -1,3 +1,4 @@
 deps.zig
 
 .gyro
+zig-cache

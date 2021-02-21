@@ -1,14 +1,12 @@
 const std = @import("std");
-const Instruction = @import("tokens.zig").Instruction;
+const Instruction = @import("lib/instructions.zig").Instruction;
+const parser = @import("lib/parser.zig");
 
-fn join_values(x: u4, y: u4, z: u4) u12 {
-    return @as(u12, x) << 8 | @as(u8, y) << 4 | z;
-}
+pub const CompilerError = error{ ParseError, OutOfMemory };
 
 pub fn main() void {
-    const a: u12 = join_values(0xf, 0xf, 0xf);
+    var input: []const u8 = "JP V0, AAA\nJP 000\noijdpoakwr";
+    var instructions = parser.parse(input);
 
-    const instruction = Instruction{ .GoTo = a };
-
-    std.debug.print("{}\n", .{instruction});
+    std.debug.print("{s}\n", .{instructions});
 }
