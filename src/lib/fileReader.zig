@@ -10,11 +10,7 @@ pub fn readArgument() Error![:0]u8 {
 
     _ = arguments.skip();
 
-    return arguments.next(allocator) orelse {
-        return Error.MissingArgument;
-    } catch |_| {
-        return Error.MissingArgument;
-    };
+    return arguments.next(allocator) orelse Error.MissingArgument catch Error.MissingArgument;
 }
 
 pub fn readAsUtf8(path: [:0]u8) Error![]u8 {
@@ -23,11 +19,7 @@ pub fn readAsUtf8(path: [:0]u8) Error![]u8 {
     };
     defer file.close();
 
-    const content = file.readToEndAlloc(std.heap.page_allocator, 4096) catch |_| {
-        return Error.FileTooBig;
-    };
-
-    return content;
+    return file.readToEndAlloc(std.heap.page_allocator, 4096) catch Error.FileTooBig;
 }
 
 pub fn readFile() Error![]u8 {
