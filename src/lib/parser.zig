@@ -21,6 +21,10 @@ const whitespace = oneOf(.{
     ascii.char('\n'),
 });
 
+const zeroOrMoreWhitespace = many(whitespace);
+
+const oneOrMoreWhistepace = manyRange(1, std.math.maxInt(usize), whitespace);
+
 pub const addr = map(u12, toAddr, manyN(3, hex));
 
 fn toInstructionWithNoArgument(v: []const u8) Instruction {
@@ -134,27 +138,32 @@ pub const instruction = oneOf(.{
     instruction_ending_with_register,
 });
 
-pub const instructionWithLineBreak = combine(.{ instruction, discard(ascii.char('\n')) });
+pub const instructionWithLineBreak = combine(.{ discard(ascii.char('\n')), discard(zeroOrMoreWhitespace), instruction });
 
 pub fn parse(input: []const u8) Error!ArrayList(Instruction) {
     var text = input;
     var instructionList = ArrayList(Instruction).init(std.heap.page_allocator);
     var count: u16 = 1;
 
+    while (true) {
+        const result = oneOrMoreWhistepace(text) orelse {
+            break;
+        };
+
+        text = result.rest;
+    }
+
     while (!std.mem.eql(u8, text, "")) : (count += 1) {
-        var result = instructionWithLineBreak(text);
+        const parsed = if (count == 1) instruction(text) else instructionWithLineBreak(text);
 
-        if (result == null) {
-            result = instruction(text);
+        const result = parsed orelse {
+            std.log.err("Parsing error on line {d}", .{count});
+            return Error.ParseError;
+        };
 
-            if (result == null) {
-                std.log.err("Parsing error on line {d}", .{count});
-                return Error.ParseError;
-            }
-        }
+        text = result.rest;
 
-        text = result.?.rest;
-        try instructionList.append(result.?.value);
+        try instructionList.append(result.value);
     }
 
     return instructionList;
