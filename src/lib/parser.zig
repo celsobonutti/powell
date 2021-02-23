@@ -1,6 +1,7 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
-const CompilerError = @import("../main.zig").CompilerError;
+
+pub const Error = error{ ParseError, OutOfMemory };
 
 usingnamespace @import("instructions.zig");
 usingnamespace @import("mecha");
@@ -135,9 +136,9 @@ pub const instruction = oneOf(.{
 
 pub const instructionWithLineBreak = combine(.{ instruction, discard(ascii.char('\n')) });
 
-pub fn parse(input: []const u8) CompilerError![]const Instruction {
+pub fn parse(input: []const u8) Error!ArrayList(Instruction) {
     var text = input;
-    var intructionList = ArrayList(Instruction).init(std.heap.page_allocator);
+    var instructionList = ArrayList(Instruction).init(std.heap.page_allocator);
     var count: u16 = 1;
 
     while (!std.mem.eql(u8, text, "")) : (count += 1) {
@@ -147,14 +148,14 @@ pub fn parse(input: []const u8) CompilerError![]const Instruction {
             result = instruction(text);
 
             if (result == null) {
-                std.log.err("Parsing error in line {d}", .{count});
-                return CompilerError.ParseError;
+                std.log.err("Parsing error on line {d}", .{count});
+                return Error.ParseError;
             }
         }
 
         text = result.?.rest;
-        try intructionList.append(result.?.value);
+        try instructionList.append(result.?.value);
     }
 
-    return intructionList.items;
+    return instructionList;
 }

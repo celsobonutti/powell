@@ -1,11 +1,20 @@
 const std = @import("std");
 const Instruction = @import("lib/instructions.zig").Instruction;
 const parser = @import("lib/parser.zig");
+const fileReader = @import("lib/fileReader.zig");
 
-pub const CompilerError = error{ ParseError, OutOfMemory };
+const CompilerError = parser.Error || fileReader.Error;
 
 pub fn main() void {
-    var input: []const u8 = "JP V0, AAA\nJP 000\nSKP V5\nLD V5, [I]";
-    var instructions = parser.parse(input);
-    std.debug.print("{s}\n", .{instructions});
+    var file = fileReader.readFile() catch |err| {
+        return;
+    };
+
+    var instructions = parser.parse(file) catch |err| {
+        return;
+    };
+
+    std.debug.print("{s}\n", .{instructions.items});
+
+    instructions.deinit();
 }
